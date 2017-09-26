@@ -2,12 +2,71 @@
 <html lang="en">
 <head>
     <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script type="text/babel" >
         "use strict";
-    
+        let socket;
+        const canvas = document.querySelector('#main');
+        let buffer;
+        let ctx = canvas.getContext('2d');
+        let bufferCtx;
+        
+        const handleMessage = (data) => {
+            let image = new Image();
+            
+            image.onload = () => {
+             
+                ctx.save();
+                ctx.globalCompositeOperation = "source-over";
+                ctx.shadowColor = "#00FFFF";
+                ctx.shadowBlur = 10;
+                ctx.globalAlpha = 0.2;
+                ctx.drawImage(image, data.x, data.y, data.width, data.height);
+                ctx.restore();
+            };
+            image.src = data.imgData
+            const newData = {
+                x:data.x,
+                y:data.y,
+                height:data.height,
+                width:data.width,
+                imgData: canvas.toDataURL()
+            };
+            socket.emit('newBoi', newData);
+        };
+
+        const setup = () => {
+            buffer = document.createElement('canvas');
+            buffer.height = 200;
+            buffer.width = 200;
+            bufferCtx = buffer.getContext('2d');
+            ctx.fillRect(100,100,200,200);
+            bufferCtx.fillRect(0,0,200,200);
+
+            const data = {
+                x:300,
+                y:300,
+                height:200,
+                width:200,
+                imgData: buffer.toDataURL()
+            };
+
+            socket.emit('newBoi', data);
+        };
+
+        const init = () => {
+            socket = io.connect();
+            setup();
+            socket.on('oldBoi', (data) => {
+                handleMessage(data);
+            });
+        };
+
+        window.onload = init;
+
     </script>
 </head>
 <body>
-
+    <canvas id="main" height="700" width=700>Get a better browser</canvas>
 </body>
 </html>
